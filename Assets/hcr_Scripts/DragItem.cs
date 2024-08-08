@@ -15,23 +15,25 @@ public class DragItem : MonoBehaviour
     private SpriteRenderer spriteRenderer;
 
     private float rangeRadius = 16f;
+    private float mouseY;
+    bool mousePosUpdated = false;
+
 
     void Start()
     {
         ableToCast = false;
         spriteRenderer = gameObject.GetComponent<SpriteRenderer>();
 
-        ground = 1 << LayerMask.NameToLayer("Ground");
+        ground = LayerMask.GetMask("Ground");
     }
     // Update is called once per frame
     void Update()
     {
         checkAbleToCast();
-        if (ableToCast)
-        {
-            moveObject();
-        }
+        moveObject();
     }
+
+
     private void OnMouseOver()//Change color when mouse over
     {
         if (ableToCast)
@@ -72,21 +74,38 @@ public class DragItem : MonoBehaviour
     }
     void moveObject()
     {
-        if (isHeld)
+        if (isHeld && ableToCast)
         {
+
             Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             Vector3 newPos = new Vector3(mousePos.x - startPosX, mousePos.y - startPosY, 0);
-
+            Vector3 newMousePos = new Vector3(Input.mousePosition.x, mouseY, 0);
             float hitDistance = GetHitDistance(newPos);
-            float groundLevel;
+
+/*            if (hitDistance == 0.01f)
+            {
+                mouseY = Input.mousePosition.y;
+                Debug.Log("1");
+            }*/
 
             if (hitDistance < 0.01f)
             {
-                groundLevel = gameObject.transform.position.y;
-                newPos.y = groundLevel;
+                newPos.y = gameObject.transform.position.y;
+                if (!mousePosUpdated)
+                {
+                    mouseY = Input.mousePosition.y;
+                    mousePosUpdated = true;
+                    Debug.Log(mouseY);
+                }
+                Mouse.current.WarpCursorPosition(newMousePos);
+            }
+            
+            if(mousePosUpdated && hitDistance >0.1f)
+            {
+                mousePosUpdated = false;
             }
 
-            Vector4 hitVector = GetHitVector(newPos);  
+/*            Vector4 hitVector = GetHitVector(newPos);*/
 
             gameObject.transform.localPosition = newPos;
 
@@ -105,7 +124,7 @@ public class DragItem : MonoBehaviour
         return 0f;
     }
 
-    private Vector4 GetHitVector(Vector2 position)
+/*    private Vector4 GetHitVector(Vector2 position)
     {
         RaycastHit2D hitLeft = Physics2D.Raycast(position, Vector2.left, maxRaycastDistance, ground);
         RaycastHit2D hitRight = Physics2D.Raycast(position, Vector2.right, maxRaycastDistance, ground);
@@ -116,13 +135,5 @@ public class DragItem : MonoBehaviour
             return new Vector4(hitLeft.distance, hitRight.distance, hitUp.distance, hitDown.distance);
         }
         return Vector4.zero;
-    }
-
-/*    private void ClampMousePosition()
-    {
-        var mouse = Mouse.current;
-        if () ;
-        Mouse.current.WarpCursorPosition(new Vector2(123, 234));
     }*/
-
 }
