@@ -11,6 +11,7 @@ TagManager:
   - Creature
   - CheckPoint
   - Mushroom
+  - Daikon
   layers:
   - Default
   - TransparentFX
@@ -23,7 +24,7 @@ TagManager:
   - Player
   - Creature
   - Mushroom
-  - 
+  - Daikon
   - 
   - 
   - 
@@ -50,4 +51,10 @@ TagManager:
     locked: 0
   - name: map
     uniqueID: 1822705759
+    locked: 0
+  - name: Creature
+    uniqueID: 1821191535
+    locked: 0
+  - name: Player
+    uniqueID: 2086642491
     locked: 0

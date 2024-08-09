@@ -15,8 +15,8 @@ public class DragItem : MonoBehaviour
     private SpriteRenderer spriteRenderer;
 
     private float rangeRadius = 16f;
-    private float mouseY;
-    bool mousePosUpdated = false;
+    private bool[] mousePosUpdatedList = new bool[4];//[Down, Up, Right, Left]
+    private Vector3 originalMousePos;
 
 
     void Start()
@@ -76,36 +76,14 @@ public class DragItem : MonoBehaviour
     {
         if (isHeld && ableToCast)
         {
-
             Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             Vector3 newPos = new Vector3(mousePos.x - startPosX, mousePos.y - startPosY, 0);
-            Vector3 newMousePos = new Vector3(Input.mousePosition.x, mouseY, 0);
-            float hitDistance = GetHitDistance(newPos);
 
-/*            if (hitDistance == 0.01f)
-            {
-                mouseY = Input.mousePosition.y;
-                Debug.Log("1");
-            }*/
 
-            if (hitDistance < 0.01f)
-            {
-                newPos.y = gameObject.transform.position.y;
-                if (!mousePosUpdated)
-                {
-                    mouseY = Input.mousePosition.y;
-                    mousePosUpdated = true;
-                    Debug.Log(mouseY);
-                }
-                Mouse.current.WarpCursorPosition(newMousePos);
-            }
-            
-            if(mousePosUpdated && hitDistance >0.1f)
-            {
-                mousePosUpdated = false;
-            }
-
-/*            Vector4 hitVector = GetHitVector(newPos);*/
+            newPos.y = CheckAndRestrictMovement(newPos, Vector2.down, 0, newPos.y, transform.position.y);
+            newPos.y = CheckAndRestrictMovement(newPos, Vector2.up, 1, newPos.y, transform.position.y);
+            newPos.x = CheckAndRestrictMovement(newPos, Vector2.right, 2, newPos.x, transform.position.x);
+            newPos.x = CheckAndRestrictMovement(newPos, Vector2.left, 3, newPos.x, transform.position.x);
 
             gameObject.transform.localPosition = newPos;
 
@@ -113,27 +91,41 @@ public class DragItem : MonoBehaviour
             Player.playerObject.castingObject = gameObject;
         }
     }
-    private float GetHitDistance(Vector2 position)
+    private float GetHitDistance(Vector2 position, Vector2 direction)
     {
-        RaycastHit2D hit = Physics2D.Raycast(position, Vector2.down, maxRaycastDistance, ground);
-        Debug.DrawRay(position, Vector2.down * hit.distance, Color.red);
+        RaycastHit2D hit = Physics2D.Raycast(position, direction, maxRaycastDistance, ground);
+        Debug.DrawRay(position, direction * hit.distance, Color.red);
         if (hit.collider != null)
         {
             return hit.distance;
         }
-        return 0f;
+        return 99999f;
     }
-
-/*    private Vector4 GetHitVector(Vector2 position)
+    float CheckAndRestrictMovement(Vector3 newPos, Vector2 direction, int index, float axisValue, float originalValue)
     {
-        RaycastHit2D hitLeft = Physics2D.Raycast(position, Vector2.left, maxRaycastDistance, ground);
-        RaycastHit2D hitRight = Physics2D.Raycast(position, Vector2.right, maxRaycastDistance, ground);
-        RaycastHit2D hitUp = Physics2D.Raycast(position, Vector2.up, maxRaycastDistance, ground);
-        RaycastHit2D hitDown = Physics2D.Raycast(position, Vector2.down, maxRaycastDistance, ground);
-        if (hitDown.collider != null)
+        float hitDistance = GetHitDistance(newPos, direction);
+        Vector3 newMousePos = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0);
+
+        if (hitDistance < 0.01f)
         {
-            return new Vector4(hitLeft.distance, hitRight.distance, hitUp.distance, hitDown.distance);
+            axisValue = originalValue;
+
+            if (!mousePosUpdatedList[index])
+            {
+                // Save the original mouse position the first time we hit the object
+                originalMousePos = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0);
+                mousePosUpdatedList[index] = true;
+            }
+
+            // Warp the cursor to its original position to prevent further movement
+            Mouse.current.WarpCursorPosition(originalMousePos);
         }
-        return Vector4.zero;
-    }*/
+
+        if (mousePosUpdatedList[index] && hitDistance > 0.1f)
+        {
+            mousePosUpdatedList[index] = false;
+        }
+
+        return axisValue;
+    }
 }
